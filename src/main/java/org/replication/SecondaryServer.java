@@ -20,7 +20,7 @@ public class SecondaryServer {
     public static void main(String[] args) throws IOException {
         //create instance of HttpServer
         HttpServer server = HttpServer.create(
-                new InetSocketAddress(7081), 0);
+                new InetSocketAddress(8080), 0);
 
         // define handlers for GET and POST methods
         server.createContext("/", new GetHandler(messages));
