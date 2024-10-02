@@ -24,7 +24,7 @@ public class SecondaryServer {
 
         // define handlers for GET and POST methods
         server.createContext("/", new GetHandler(messages));
-        HttpContext postContext = server.createContext("/saveData", new PostHandler(messages));
+        server.createContext("/saveData", new PostHandler(messages));
 
         // start server
         server.start();
