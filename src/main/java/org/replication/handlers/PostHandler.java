@@ -28,7 +28,7 @@ public class PostHandler implements HttpHandler {
             String response = "Data received successfully!";
             // use for introduction of delay
            /* try {
-                sleep(5000);
+                sleep(10000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }*/
