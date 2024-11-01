@@ -1,7 +1,6 @@
-version: '3'
 services:
   main:
-    image: server-image
+    image: main-server-image
     container_name: main
     depends_on:
       - secondary1

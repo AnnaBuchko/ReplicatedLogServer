@@ -9,12 +9,14 @@ import org.replication.handlers.MainPostHandler;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.Executors;
 
 public class MainServer {
     public static final Logger logger = LogManager.getLogger(MainServer.class);
-    private static final List<String> messages = new ArrayList<>();
+    private static final SortedMap<Integer, String> messages = new TreeMap<>();
 
     public static void main(String[] args) throws IOException {
         // represents a list of http addresses of secondary servers, configured in configuration file
@@ -29,6 +31,7 @@ public class MainServer {
         server.createContext("/data", new MainPostHandler(messages, secondaryAddresses));
 
         // start server
+        server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();
         logger.info("Main server is started.");
         logger.info("Available list of replication servers:{}", secondaryAddresses.toString());
