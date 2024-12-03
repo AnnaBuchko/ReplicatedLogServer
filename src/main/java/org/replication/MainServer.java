@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.replication.configuration.ConfigFileReader;
+import org.replication.handlers.RecoveryHandler;
 import org.replication.handlers.GetHandler;
 import org.replication.handlers.MainPostHandler;
 
@@ -29,6 +30,7 @@ public class MainServer {
         // define handlers for GET and POST methods
         server.createContext("/", new GetHandler(messages));
         server.createContext("/data", new MainPostHandler(messages, secondaryAddresses));
+        server.createContext("/recover", new RecoveryHandler(messages));
 
         // start server
         server.setExecutor(Executors.newFixedThreadPool(10));

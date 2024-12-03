@@ -1,5 +1,8 @@
 package org.replication.configuration;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
@@ -11,6 +14,7 @@ import java.io.FileInputStream;
 public class ConfigFileReader {
 
     private final Properties properties;
+    private static final Logger logger = LogManager.getLogger(ConfigFileReader.class);
 
     public ConfigFileReader() {
         // read configuration file
@@ -36,6 +40,16 @@ public class ConfigFileReader {
         if (rawSecondariesServersList != null){
             return Arrays.asList(rawSecondariesServersList.split(","));
         }
+       logger.warn("Property secondary.servers.addresses not found");
         return null;
+    }
+
+    public String getMainUrl() {
+       String mainUrl = properties.getProperty("main.server.address");
+       if (mainUrl != null){
+           return mainUrl;
+       }
+       logger.warn("Property main.server.address not found");
+       return null;
     }
 }

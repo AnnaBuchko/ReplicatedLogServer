@@ -110,22 +110,47 @@ public class MainPostHandler implements HttpHandler {
     }
 
     public void sendToSecondary(String address, String message) {
-        try {
-            HttpURLConnection connection = getHttpURLConnection(address);
-
-            try (OutputStream os = connection.getOutputStream()) {
-                os.write(message.getBytes());
-                os.flush();
-            }
-            // get ACK from secondaries server
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 200){
-                logger.info("Message sent to {} ",address);
-            }
-            connection.disconnect();
-        } catch (Exception ex) {
-            logger.error("Got error from {}: {}", address, ex.getMessage());
+        int attempt = 0;
+        int initialDelay = 1000;
+        if(address.isEmpty()){
+            logger.error("Secondary address is not defined. Pleases set it in configuration!");
+            return;
         }
+        while (attempt < 100){
+            attempt++;
+            try {
+                HttpURLConnection connection = getHttpURLConnection(address);
+
+                try (OutputStream os = connection.getOutputStream()) {
+                    os.write(message.getBytes());
+                    os.flush();
+                }
+                // get ACK from secondaries server
+                int responseCode = connection.getResponseCode();
+                if (responseCode == 200){
+                    logger.info("Message \"{}\" sent to {} on attempt {}", message, address, attempt);
+                    connection.disconnect();
+                    break;
+                }
+            } catch (Exception ex) {
+                logger.error("Attempt {} failed for {}: {}. Retrying...",
+                        attempt, address, ex.getMessage());
+            }
+            long delay = getExpBackoff(initialDelay, attempt);
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException ex) {
+                logger.error("Retry interrupted: {}", ex.getMessage());
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
+    private long getExpBackoff(int initialDelayMillis, int attempt) {
+        int exponentialBackoff = (int) Math.min(Integer.MAX_VALUE, initialDelayMillis * Math.pow(2, attempt - 1));
+        int jitter = (int) (Math.random() * (exponentialBackoff / 2));
+        return exponentialBackoff + jitter;
     }
 
     private static HttpURLConnection getHttpURLConnection(String address) throws IOException {

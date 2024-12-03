@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
 
-import static java.lang.Math.random;
-import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.*;
 
 // Handler for POST requests
@@ -28,13 +26,13 @@ public class SecondaryPostHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         if ("POST".equals(exchange.getRequestMethod())) {
             // use for introduction of delay
-            try {
+           /* try {
                 int random = (int)(10 * random());
                 logger.info("Delay for {} seconds", random * 5);
                 sleep(random * 5000L);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            }
+            }*/
             readAndSaveMessage(exchange);
             String response = "Data received successfully!";
 
@@ -54,7 +52,14 @@ public class SecondaryPostHandler implements HttpHandler {
         String requestBody = new BufferedReader(new InputStreamReader(is, UTF_8))
                 .lines().collect(Collectors.joining("\n"));
         Map<Integer, String> requestBodyParsed = parseRequestBody(requestBody);
-
+      //TEST total order
+      // Generate exception on message 3 until 6 messages were not saved
+      /* if(requestBodyParsed.containsKey(3) && !messages.containsKey(6)){
+           if (exchange.getRequestHeaders().getFirst("Host").equals("secondary1:8080")){
+               logger.error("Error for total order check");
+               throw new RuntimeException("Error for total order check");
+           }
+        }*/
         // save the received message
         synchronized (messages) {
             messages.putAll(requestBodyParsed);

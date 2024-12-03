@@ -1,6 +1,6 @@
 services:
   main:
-    image: main-server-image
+    image: server-image
     container_name: main
     depends_on:
       - secondary1
@@ -16,6 +16,7 @@ services:
     container_name: secondary1
     volumes:
       - ./target/replicated-log-secondary-1.0-SNAPSHOT.jar:/docker-dir/server.jar
+      - ./docker-properties/server.properties:/docker-dir//properties/server.properties
     ports:
       - 8082:8080
 
@@ -24,5 +25,6 @@ services:
     container_name: secondary2
     volumes:
       - ./target/replicated-log-secondary-1.0-SNAPSHOT.jar:/docker-dir/server.jar
+      - ./docker-properties/server.properties:/docker-dir//properties/server.properties
     ports:
       - 8083:8080
