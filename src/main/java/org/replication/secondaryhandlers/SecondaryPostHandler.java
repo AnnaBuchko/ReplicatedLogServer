@@ -1,9 +1,10 @@
-package org.replication.handlers;
+package org.replication.secondaryhandlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.replication.mainhandlers.MainPostHandler;
 
 import java.io.*;
 import java.util.HashMap;

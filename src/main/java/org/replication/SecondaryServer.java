@@ -4,8 +4,9 @@ import com.sun.net.httpserver.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.replication.configuration.ConfigFileReader;
-import org.replication.handlers.GetSecondaryHandler;
-import org.replication.handlers.SecondaryPostHandler;
+import org.replication.secondaryhandlers.GetSecondaryHandler;
+import org.replication.secondaryhandlers.PingHandler;
+import org.replication.secondaryhandlers.SecondaryPostHandler;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -29,6 +30,7 @@ public class SecondaryServer {
         // define handlers for GET and POST methods
         server.createContext("/", new GetSecondaryHandler(messages, mainUrl));
         server.createContext("/saveData", new SecondaryPostHandler(messages));
+        server.createContext("/ping", new PingHandler());
 
         // start server
         server.setExecutor(Executors.newFixedThreadPool(10));

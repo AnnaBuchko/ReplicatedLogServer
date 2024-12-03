@@ -1,4 +1,4 @@
-package org.replication.handlers;
+package org.replication.mainhandlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;

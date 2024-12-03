@@ -1,9 +1,10 @@
-package org.replication.handlers;
+package org.replication.mainhandlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.replication.scheduler.SecondaryHealthMonitor;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -19,21 +20,33 @@ import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.replication.scheduler.SecondaryHealthMonitor.ServerStatus.*;
 
 public class MainPostHandler implements HttpHandler {
     protected final SortedMap<Integer, String> messages;
     private final List<String> secondaryAddresses;
+    private SecondaryHealthMonitor healthMonitor;
     private static int counter = 0;
     private static final Logger logger = LogManager.getLogger(MainPostHandler.class);
 
-    public MainPostHandler(SortedMap<Integer, String> messages, List<String> secondaryAddresses) {
+    public MainPostHandler(SortedMap<Integer, String> messages, List<String> secondaryAddresses,
+                           SecondaryHealthMonitor healthMonitor) {
         this.messages = messages;
         this.secondaryAddresses = secondaryAddresses;
+        this.healthMonitor = healthMonitor;
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if ("POST".equals(exchange.getRequestMethod())) {
+            if(!healthMonitor.isQuorumReached()){
+                String response = "Data append is not allowed. Replication servers are down.";
+                exchange.sendResponseHeaders(200, response.getBytes(UTF_8).length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes(UTF_8));
+                }
+                return;
+            }
             int writeConcern = readWriteConcerns(exchange, secondaryAddresses.size());
             CountDownLatch countDownLatch = new CountDownLatch(writeConcern - 1);
             // returns the formated message with counter and message
@@ -82,7 +95,7 @@ public class MainPostHandler implements HttpHandler {
         return Math.max(writeConcern, 1);
     }
 
-    protected static Map<String, String> parseQueryParams(String query) {
+    public static Map<String, String> parseQueryParams(String query) {
         Map<String, String> queryPairs = new HashMap<>();
         if (query == null) return queryPairs;
         String[] pairs = query.split("&");
@@ -116,7 +129,14 @@ public class MainPostHandler implements HttpHandler {
             logger.error("Secondary address is not defined. Pleases set it in configuration!");
             return;
         }
-        while (attempt < 100){
+        SecondaryHealthMonitor.ServerStatus status = healthMonitor.getSecondaryHealth().getOrDefault(address, UNHEALTHY);
+        if (status == UNHEALTHY) {
+            logger.info("Skipping retry for {}  as it is UNHEALTHY", address);
+            return;
+        }
+        int noAttempts = status == SUSPECTED ? 3: 100;
+        logger.info("Set number attempts to {}", noAttempts);
+        while (attempt < noAttempts){
             attempt++;
             try {
                 HttpURLConnection connection = getHttpURLConnection(address);
@@ -145,6 +165,9 @@ public class MainPostHandler implements HttpHandler {
                 break;
             }
         }
+
+        logger.info("All retry attempts failed for {}. Marking as SUSPECTED.", address);
+        healthMonitor.getSecondaryHealth().put(address, SUSPECTED);
     }
 
     private long getExpBackoff(int initialDelayMillis, int attempt) {
